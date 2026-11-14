@@ -29,8 +29,8 @@ const LoggedInLayout = ({
       <AdminSidebar
         isOpen={isSidebarOpen}
         onClose={closeSidebar}
-        onLogout={onLogout}
-        isLoggingOut={isLoggingOut}
+        // onLogout={onLogout}
+        // isLoggingOut={isLoggingOut}
       />
 
       {/* Main content */}

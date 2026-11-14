@@ -1,7 +1,7 @@
 const routes = {
     auth: {
         login: '/admin/login',
-        logout: '/amin/logout',
+        logout: '/admin/logout',
     },
 
     dashboard: {
