@@ -1,5 +1,6 @@
 
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Eye,
   EyeOff,
@@ -8,15 +9,18 @@ import {
   ShieldCheck,
   Loader2,
 } from "lucide-react";
+import { useLogin } from "../network/auth/queries";
 
 const AdminLogin = () => {
+  const navigate = useNavigate();
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
 
-  // Temporary submit handler.
-  // We'll connect this to the separate admin login endpoint next.
+  const adminLoginMutation = useLogin();
+
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError("");
@@ -26,14 +30,28 @@ const AdminLogin = () => {
       return;
     }
 
-    // Admin authentication API will go here.
-    console.log("Admin login submitted");
+    adminLoginMutation.mutate(
+      {
+        email: email.trim(),
+        password,
+      },
+      {
+        onSuccess: () => {
+          navigate("/dashboard", { replace: true });
+        },
+        onError: (error: any) => {
+          setError(
+            error?.response?.data?.message ||
+              "Unable to sign in. Please check your credentials and try again."
+          );
+        },
+      }
+    );
   };
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-[#15181E] px-4 py-10 text-white">
       <div className="w-full max-w-md">
-
         {/* Brand */}
         <div className="mb-10 text-center">
           <div className="mb-5 flex items-center justify-center gap-3">
@@ -58,11 +76,8 @@ const AdminLogin = () => {
 
         {/* Login card */}
         <div className="rounded-2xl border border-white/10 bg-[#1C2028] p-6 shadow-2xl sm:p-8">
-
           <div className="mb-8">
-            <h1 className="text-2xl font-bold">
-              Welcome back
-            </h1>
+            <h1 className="text-2xl font-bold">Welcome back</h1>
 
             <p className="mt-2 text-sm leading-6 text-white/50">
               Sign in to access your AvendCrest administration dashboard.
@@ -70,7 +85,6 @@ const AdminLogin = () => {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5">
-
             {/* Email */}
             <div>
               <label
@@ -134,19 +148,28 @@ const AdminLogin = () => {
               </div>
             </div>
 
-            {/* Error message */}
-            {error && (
+            {/* Error */}
+            {(error || adminLoginMutation.isError) && (
               <p role="alert" className="text-sm text-red-400">
-                {error}
+                {error ||
+                  "Unable to sign in. Please check your credentials and try again."}
               </p>
             )}
 
             {/* Submit */}
             <button
               type="submit"
-              className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#E1161F] text-sm font-semibold text-white transition hover:bg-[#c9131b] active:scale-[0.99]"
+              disabled={adminLoginMutation.isPending}
+              className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#E1161F] text-sm font-semibold text-white transition hover:bg-[#c9131b] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
             >
-              Sign in to Admin Portal
+              {adminLoginMutation.isPending ? (
+                <>
+                  <Loader2 size={18} className="animate-spin" />
+                  Signing in...
+                </>
+              ) : (
+                "Sign in to Admin Portal"
+              )}
             </button>
           </form>
 
