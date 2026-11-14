@@ -2,11 +2,11 @@
 import { useState } from "react";
 import { NavLink } from "react-router-dom";
 import Modal from "../ui/Modal";
+import { useLogout } from "../../network/auth/queries";
 
 import {
   LayoutDashboard,
   Users,
-  Wallet,
   ArrowDownToLine,
   ArrowUpFromLine,
   ChartNoAxesCombined,
@@ -23,91 +23,56 @@ import {
 type AdminSidebarProps = {
   isOpen: boolean;
   onClose: () => void;
-  onLogout?: () => void;
-  isLoggingOut?: boolean;
 };
 
 const navigation = [
   {
     section: "Overview",
     items: [
-      {
-        name: "Dashboard",
-        path: "/dashboard",
-        icon: LayoutDashboard,
-      },
+      { name: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
     ],
   },
   {
-    // section: "User Management",
     items: [
-      {
-        name: "All Users",
-        path: "/users",
-        icon: Users,
-      },
+      { name: "All Users", path: "/users", icon: Users },
     ],
   },
   {
-    // section: "Financial Operations",
     items: [
-      {
-        name: "Deposits",
-        path: "/deposits",
-        icon: ArrowDownToLine,
-      },
-      {
-        name: "Withdrawals",
-        path: "/withdrawals",
-        icon: ArrowUpFromLine,
-      },
-      {
-        name: "Transactions",
-        path: "/transactions",
-        icon: ArrowLeftRight,
-      },
+      { name: "Deposits", path: "/deposits", icon: ArrowDownToLine },
+      { name: "Withdrawals", path: "/withdrawals", icon: ArrowUpFromLine },
+      { name: "Transactions", path: "/transactions", icon: ArrowLeftRight },
     ],
   },
   {
-    // section: "Investment Management",
     items: [
-      {
-        name: "Investments",
-        path: "/investments",
-        icon: ChartNoAxesCombined,
-      },
-      {
-        name: "Investment Plans",
-        path: "/plans",
-        icon: Layers,
-      },
+      { name: "Investments", path: "/investments", icon: ChartNoAxesCombined },
+      { name: "Investment Plans", path: "/plans", icon: Layers },
     ],
   },
   {
-    // section: "Growth",
     items: [
-      {
-        name: "Referrals",
-        path: "/referrals",
-        icon: UsersRound,
-      },
+      { name: "Referrals", path: "/referrals", icon: UsersRound },
     ],
   },
 ];
 
-const AdminSidebar = ({
-  isOpen,
-  onClose,
-  onLogout,
-  isLoggingOut = false,
-}: AdminSidebarProps) => {
+const AdminSidebar = ({ isOpen, onClose }: AdminSidebarProps) => {
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
 
-  const handleLogout = () => {
-    if (!onLogout || isLoggingOut) return;
+  const logoutMutation = useLogout();
 
-    onLogout();
-    setIsLogoutModalOpen(false);
+  const isLoggingOut = logoutMutation.isPending;
+
+  const handleLogout = () => {
+    if (isLoggingOut) return;
+
+    logoutMutation.mutate(undefined, {
+      onSuccess: () => {
+        setIsLogoutModalOpen(false);
+        onClose();
+      },
+    });
   };
 
   return (
@@ -138,9 +103,7 @@ const AdminSidebar = ({
             />
 
             <div>
-              <p className="text-xl font-bold tracking-wide">
-                AvendCrest
-              </p>
+              <p className="text-xl font-bold tracking-wide">AvendCrest</p>
               <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#E1161F]">
                 Administration
               </p>
@@ -151,7 +114,7 @@ const AdminSidebar = ({
             type="button"
             onClick={onClose}
             aria-label="Close sidebar"
-            className="rounded-lg p-2 ml-8 text-white/60 transition hover:bg-white/10 hover:text-white md:hidden"
+            className="ml-8 rounded-lg p-2 text-white/60 transition hover:bg-white/10 hover:text-white md:hidden"
           >
             <X size={20} />
           </button>
@@ -159,11 +122,13 @@ const AdminSidebar = ({
 
         {/* Navigation */}
         <nav className="flex-1 overflow-y-auto pb-4">
-          {navigation.map((group) => (
-            <div key={group.section}>
-              <p className="mb-3 px-3 text-[10px] font-bold uppercase tracking-[0.16em] text-white/35">
-                {group.section}
-              </p>
+          {navigation.map((group, index) => (
+            <div key={index} className="mb-5">
+              {group.section && (
+                <p className="mb-3 px-3 text-[10px] font-bold uppercase tracking-[0.16em] text-white/35">
+                  {group.section}
+                </p>
+              )}
 
               <div className="space-y-1">
                 {group.items.map((item) => {
@@ -196,7 +161,7 @@ const AdminSidebar = ({
         {/* Bottom actions */}
         <div className="shrink-0 space-y-1 border-t border-white/10 pt-4">
           <NavLink
-            to="/admin/settings"
+            to="/settings"
             onClick={onClose}
             className={({ isActive }) =>
               `flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium transition ${
@@ -252,9 +217,9 @@ const AdminSidebar = ({
             </p>
           </div>
 
-          {!onLogout && (
-            <p className="text-sm text-amber-400">
-              Admin logout has not been connected yet.
+          {logoutMutation.isError && (
+            <p className="text-sm text-red-400">
+              Logout failed. Please try again.
             </p>
           )}
 
@@ -270,7 +235,7 @@ const AdminSidebar = ({
 
             <button
               type="button"
-              disabled={!onLogout || isLoggingOut}
+              disabled={isLoggingOut}
               onClick={handleLogout}
               className="flex items-center justify-center gap-2 rounded-lg bg-[#E1161F] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#c9131b] disabled:cursor-not-allowed disabled:opacity-50"
             >
